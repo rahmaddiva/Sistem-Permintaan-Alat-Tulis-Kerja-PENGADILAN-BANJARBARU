@@ -9,6 +9,28 @@ class M_stok_barang extends CI_Model
     return $this->db->get('tb_jenis_barang')->result_array();
   }
 
+  public function get_tambah_stok_barang()
+  {
+    $this->db->select('tb_tambah_barang.*, tb_stok_barang.nama_barang, tb_stok_barang.kode_barang, tb_user.nama');
+    $this->db->from('tb_tambah_barang');
+    $this->db->join('tb_stok_barang', 'tb_stok_barang.id_stok_barang = tb_tambah_barang.id_stok_barang');
+    $this->db->join('tb_user', 'tb_user.id_user = tb_tambah_barang.id_user');
+
+    return $this->db->get()->result_array();
+  }
+
+  public function get_tambah_stok_barang_by_id($id)
+  {
+    $this->db->select('tb_tambah_barang.*, tb_stok_barang.nama_barang, tb_stok_barang.kode_barang, tb_user.nama');
+    $this->db->from('tb_tambah_barang');
+    $this->db->join('tb_stok_barang', 'tb_stok_barang.id_stok_barang = tb_tambah_barang.id_stok_barang');
+    $this->db->join('tb_user', 'tb_user.id_user = tb_tambah_barang.id_user');
+    $this->db->where('tb_tambah_barang.id_stok_barang', $id);
+
+    return $this->db->get()->result_array(); // Mengembalikan banyak baris
+  }
+
+
   public function getstokbarang()
   {
     $this->db->select('tb_stok_barang.*, tb_permintaan.jumlah');
@@ -32,12 +54,7 @@ class M_stok_barang extends CI_Model
     return $this->db->get()->row_array();
   }
 
-  public function update_stok($id_stok_barang, $stok_baru)
-  {
-    $this->db->set('stok', 'stok + ' . (int) $stok_baru, false); // Penambahan stok
-    $this->db->where('id_stok_barang', $id_stok_barang); // Kondisi berdasarkan id
-    $this->db->update('tb_stok_barang'); // Eksekusi update
-  }
+
 
 
 }

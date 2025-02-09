@@ -57,8 +57,6 @@
                             <li><a href="<?= base_url('persetujuan/histori') ?>">Histori </a></li>
                         </ul>
                     </li>
-
-
                     <li class="nav-item pcoded-menu-caption">
                         <label>Data Akun</label>
                     </li>

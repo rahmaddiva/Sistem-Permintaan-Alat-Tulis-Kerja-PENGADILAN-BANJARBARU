@@ -61,6 +61,7 @@ class Stok_barang extends CI_Controller
 
                 'id_jenis_barang' => $this->input->post('id_jenis_barang'),
                 'id_satuan' => $this->input->post('id_satuan'),
+                'id_user' => $this->session->userdata('id_user'),
                 'kode_barang' => $this->input->post('kode_barang'),
                 'nama_barang' => $this->input->post('nama_barang'),
                 'harga_barang' => $this->input->post('harga_barang'),
@@ -90,10 +91,9 @@ class Stok_barang extends CI_Controller
 
     public function tambah_stok_barang($id)
     {
-        $data['title'] = 'Edit Stok Barang';
+        $data['title'] = 'Tambah Jumlah Barang';
         $data['stok_barang'] = $this->M_stok_barang->getstokbarangbyid($id);
-        $data['satuan_barang'] = $this->db->get('tb_satuan')->result_array();
-        $data['jenis_barang'] = $this->db->get('tb_jenis_barang')->result_array();
+        $data['jumlah_barang'] = $this->M_stok_barang->get_tambah_stok_barang_by_id($id);
 
         $this->load->view('templates/header.php');
         $this->load->view('templates/navbar.php');
@@ -103,16 +103,30 @@ class Stok_barang extends CI_Controller
 
     public function simpan_stok_barang()
     {
-        $this->form_validation->set_rules('stok', 'Stok Barang', 'required|integer');
+        $this->form_validation->set_rules('jumlah_barang', 'Jumlah Barang', 'required|integer');
 
         if ($this->form_validation->run() == FALSE) {
             $this->edit($this->input->post('id_stok_barang'));
         } else {
             $id_stok_barang = $this->input->post('id_stok_barang');
-            $stok_baru = $this->input->post('stok');
+            $id_user = $this->session->userdata('id_user');
+            $jumlah_barang = $this->input->post('jumlah_barang');
+            $tanggal = date('Y-m-d H:i:s');
 
-            // Memanggil method update_stok dari model untuk menambahkan stok
-            $this->M_stok_barang->update_stok($id_stok_barang, $stok_baru);
+            // insert data ke tabel tb_tambah_barang
+            $data = [
+                'id_stok_barang' => $id_stok_barang,
+                'id_user' => $id_user,
+                'jumlah_barang' => $jumlah_barang,
+                'tanggal' => $tanggal,
+            ];
+
+            $this->db->insert('tb_tambah_barang', $data);
+
+            // Update stok di tb_stok_barang
+            $this->db->set('stok', 'stok + ' . $jumlah_barang, FALSE);
+            $this->db->where('id_stok_barang', $id_stok_barang);
+            $this->db->update('tb_stok_barang');
 
             // Menambahkan flash message untuk notifikasi sukses
             $this->session->set_flashdata(
@@ -120,8 +134,8 @@ class Stok_barang extends CI_Controller
                 '<div class="alert alert-success" role="alert">Stok Barang Berhasil Ditambahkan!</div>'
             );
 
-            // Redirect ke halaman stok barang
-            redirect('stok_barang');
+            // Redirect ke halaman tambah stok barang
+            redirect('stok_barang/tambah_stok_barang/' . $id_stok_barang);
         }
     }
 
@@ -142,6 +156,7 @@ class Stok_barang extends CI_Controller
             $data = [
                 'id_jenis_barang' => $this->input->post('id_jenis_barang'),
                 'id_satuan' => $this->input->post('id_satuan'),
+                'id_user' => $this->session->userdata('id_user'),
                 'kode_barang' => $this->input->post('kode_barang'),
                 'nama_barang' => $this->input->post('nama_barang'),
                 'harga_barang' => $this->input->post('harga_barang'),
@@ -160,6 +175,25 @@ class Stok_barang extends CI_Controller
         $this->db->delete('tb_stok_barang', ['id_stok_barang' => $id]);
         $this->session->set_flashdata('message', '<div class="alert alert-success" role="alert">Data Stok Barang Berhasil Dihapus</div>');
         redirect('stok_barang');
+    }
+
+    public function cetak_nota_tambah_barang()
+    {
+        $this->load->library('pdfgenerator');
+
+        $id_stok_barang = $this->uri->segment(3);
+        $data['title'] = 'Cetak Nota Tambah Barang';
+        $data['tambah_stok_barang'] = $this->M_stok_barang->get_tambah_stok_barang_by_id($id_stok_barang);
+        $data['stok_barang'] = $this->M_stok_barang->getstokbarangbyid($id_stok_barang);
+
+        $html = $this->load->view('stok_barang/cetak_nota_tambah_barang', $data, true);
+
+        $file_pdf = 'nota_tambah_barang_' . $data['stok_barang']['kode_barang'];
+        $paper = 'A4';
+        $orientation = "portrait";
+
+        $this->pdfgenerator->generate($html, $file_pdf, $paper, $orientation);
+        
     }
 
 
